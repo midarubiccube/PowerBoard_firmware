@@ -24,6 +24,7 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+#include "ws2812.hpp"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -42,7 +43,8 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+extern DMA_HandleTypeDef hdma_tim1_ch1;
+WS2812 led{&htim1, TIM_CHANNEL_1, &hdma_tim1_ch1};
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -59,7 +61,6 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
 /* USER CODE END 0 */
 
 /**
@@ -107,11 +108,12 @@ int main(void)
     0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,
     //LED一個目
-    13,13,13,13,13,13,13,13, //Green
-    13,13,13,13,13,13,13,13, //Red
-    13,13,13,13,13,13,13,13, //Blue
+    7,13,13,13,13,13,13,7, //Green
+    7,7,13,13,13,13,13,7, //Red
+    7,13,13,13,13,13,13,7, //Blue
   };
-  HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t*)pwmbuf, 50+24);
+  //HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t*)pwmbuf, 50+24);
+ 
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -119,7 +121,12 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+    led.set_rgb(0, 255, 255, 255);
+    led.show();
+    HAL_Delay(100);
+    led.set_rgb(0, 0, 0, 0);
+    led.show();    
+    HAL_Delay(100);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -172,6 +179,13 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_TIM_PWM_PulseFinishedHalfCpltCallback(TIM_HandleTypeDef *htim) {
+	led.do_forwardRewrite();
+}
+
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
+	led.do_backRewrite();
+}
 
 /* USER CODE END 4 */
 
