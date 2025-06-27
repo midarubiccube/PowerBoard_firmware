@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2025 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -24,7 +24,7 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
-#include "ws2812.hpp"
+#include "FullColorLED.hpp"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -43,8 +43,6 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-extern DMA_HandleTypeDef hdma_tim1_ch1;
-WS2812 led{&htim1, TIM_CHANNEL_1, &hdma_tim1_ch1};
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -64,9 +62,9 @@ void SystemClock_Config(void);
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+ * @brief  The application entry point.
+ * @retval int
+ */
 int main(void)
 {
 
@@ -100,20 +98,9 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  uint32_t pwmbuf[50+24]={
-    //RESET
-    0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,
-    //LED一個目
-    7,13,13,13,13,13,13,7, //Green
-    7,7,13,13,13,13,13,7, //Red
-    7,13,13,13,13,13,13,7, //Blue
-  };
-  //HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t*)pwmbuf, 50+24);
- 
+  FullColorLED led{&htim1, TIM_CHANNEL_1};
+  led.set_rgb(255, 0, 0);
+  led.start();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -121,11 +108,9 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    led.set_rgb(0, 255, 255, 255);
-    led.show();
+    led.set_rgb(255, 255, 255);
     HAL_Delay(100);
-    led.set_rgb(0, 0, 0, 0);
-    led.show();    
+    led.set_rgb(255, 0, 255);;    
     HAL_Delay(100);
     /* USER CODE BEGIN 3 */
   }
@@ -133,21 +118,21 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
-  */
+   */
   HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1_BOOST);
 
   /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
+   * in the RCC_OscInitTypeDef structure.
+   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -164,9 +149,8 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+   */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -179,20 +163,12 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_TIM_PWM_PulseFinishedHalfCpltCallback(TIM_HandleTypeDef *htim) {
-	led.do_forwardRewrite();
-}
-
-void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
-	led.do_backRewrite();
-}
-
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -204,14 +180,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
