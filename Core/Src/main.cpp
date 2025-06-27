@@ -110,7 +110,17 @@ int main(void)
     /* USER CODE END WHILE */
     led.set_rgb(255, 255, 255);
     HAL_Delay(100);
+    led.set_rgb(0, 0, 255);;    
+    HAL_Delay(100);
+    led.set_rgb(255, 0, 0);;    
+    HAL_Delay(100);
+    led.set_rgb(0, 255, 0);;    
+    HAL_Delay(100);
+    led.set_rgb(255, 255, 0);;    
+    HAL_Delay(100);
     led.set_rgb(255, 0, 255);;    
+    HAL_Delay(100);
+    led.set_rgb(0, 0, 255);;    
     HAL_Delay(100);
     /* USER CODE BEGIN 3 */
   }

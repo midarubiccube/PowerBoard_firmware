@@ -12,7 +12,7 @@ void FullColorLED::stopLED(){
 }
 
 void FullColorLED::start(){
-    HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)pwm_buf, 324);
+    HAL_TIM_PWM_Start_DMA(HTIM, TIM_CHANNEL_X, (uint32_t *)pwm_buf, 324);
 }
 
 void FullColorLED::set_rgb(uint8_t r, uint8_t g,uint8_t b){
