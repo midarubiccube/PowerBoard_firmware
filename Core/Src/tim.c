@@ -153,7 +153,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef* tim_pwmHandle)
 
     /* TIM1 DMA Init */
     /* TIM1_CH1 Init */
-    hdma_tim1_ch1.Instance = DMA1_Channel1;
+    hdma_tim1_ch1.Instance = DMA1_Channel2;
     hdma_tim1_ch1.Init.Request = DMA_REQUEST_TIM1_CH1;
     hdma_tim1_ch1.Init.Direction = DMA_MEMORY_TO_PERIPH;
     hdma_tim1_ch1.Init.PeriphInc = DMA_PINC_DISABLE;

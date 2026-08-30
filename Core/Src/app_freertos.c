@@ -64,6 +64,11 @@ osTimerId_t dischargeTimerHandle;
 const osTimerAttr_t dischargeTimer_attributes = {
   .name = "dischargeTimer"
 };
+/* Definitions for cantx_task */
+osTimerId_t cantx_taskHandle;
+const osTimerAttr_t cantx_task_attributes = {
+  .name = "cantx_task"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -72,6 +77,7 @@ const osTimerAttr_t dischargeTimer_attributes = {
 
 void StartDefaultTask(void *argument);
 void dischargeCallback(void *argument);
+void cantxCallback(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -96,6 +102,9 @@ void MX_FREERTOS_Init(void) {
   /* Create the timer(s) */
   /* creation of dischargeTimer */
   dischargeTimerHandle = osTimerNew(dischargeCallback, osTimerOnce, NULL, &dischargeTimer_attributes);
+
+  /* creation of cantx_task */
+  cantx_taskHandle = osTimerNew(cantxCallback, osTimerPeriodic, NULL, &cantx_task_attributes);
 
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
@@ -143,6 +152,14 @@ __weak void dischargeCallback(void *argument)
   /* USER CODE BEGIN dischargeCallback */
 
   /* USER CODE END dischargeCallback */
+}
+
+/* cantxCallback function */
+__weak void cantxCallback(void *argument)
+{
+  /* USER CODE BEGIN cantxCallback */
+
+  /* USER CODE END cantxCallback */
 }
 
 /* Private application code --------------------------------------------------*/
