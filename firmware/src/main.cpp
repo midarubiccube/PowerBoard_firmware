@@ -1,12 +1,14 @@
-#include "main.h"
+#include "main.hpp"
+
 #include <cstring>
+
+#include "main.h"
 #include "cmsis_os2.h"
 #include "stdio.h"
 
 #include "spi.h"
 #include "adc.h"
 
-#include "message.hpp"
 #include "CANFD.hpp"
 #include "FullColorLED.hpp"
 #include "stm32g4xx_hal_gpio.h"
@@ -30,6 +32,8 @@ bool onoff = false;
 #define MCP3208_MODE_DIFF   0x00
 
 uint16_t ADC_buff[3];
+ID  own_id;
+
 
 uint16_t MCP3208_Read(uint8_t channel)
 {
@@ -68,14 +72,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     else
     {
       CANFD_Frame emengency_msg;
-      Message_format msg = {0};
+      /*Message_format msg = {0};
       msg.id.format.message_type = 0;
       msg.id.format.from_id = 0; 
       msg.id.format.from_type = 1;
       emengency_msg.id = msg.id.id;
       emengency_msg.is_remote = true;
       emengency_msg.size = 0;
-      canfd->tx(emengency_msg);
+      canfd->tx(emengency_msg);*/
       HAL_GPIO_WritePin(DISCHARGE_GPIO_Port, DISCHARGE_Pin, GPIO_PIN_SET);
       osTimerStart(dischargeTimerHandle, 300);
     }
@@ -89,28 +93,25 @@ extern "C" void StartDefaultTask(void *argument)
   led.start();
   canfd = new CANFD(&hfdcan1);
 	canfd->start();
-  //canfd->set_filter_mask(1048576, 0xFFC000);
+
+  own_id.fields.board_num = 0;
+  own_id.fields.data_type = DataType::POWERBOARD_COMANND;
+  canfd->set_filter_mask(own_id.id, 0xff);
+  
   osTimerStart(cantx_taskHandle, 10);
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)ADC_buff, sizeof(ADC_buff) / sizeof(ADC_buff[0]));
   hdma_adc1.Instance->CCR &= ~(DMA_IT_TC | DMA_IT_HT);
 
-  HAL_GPIO_WritePin(ONOFF_GPIO_Port, ONOFF_Pin, GPIO_PIN_SET);
-  osDelay(5000);
-  HAL_GPIO_WritePin(ONOFF_GPIO_Port, ONOFF_Pin, GPIO_PIN_RESET);
-  osDelay(1000);
-  HAL_GPIO_WritePin(DISCHARGE_GPIO_Port, DISCHARGE_Pin, GPIO_PIN_SET);
-  osDelay(1000);
-  HAL_GPIO_WritePin(DISCHARGE_GPIO_Port, DISCHARGE_Pin, GPIO_PIN_RESET);
   while (1)
   {
     if (canfd->rx_available())
     {
-      CANFD_Frame data;
-      canfd->rx(data);
-      Message_format msg = {0};
-      memcpy(&msg.data, data.data, 32);
-      if (msg.data.power_rsv.ON_OFF == 1){
+      CANFD_Frame receive;
+      canfd->rx(receive);
+      PWRPacket packet;
+      memcpy(&packet, receive.data, receive.size);
+      if (packet.pwrstatus == 1){
 		    led.set_rgb(0, 255, 0);
         HAL_GPIO_WritePin(DISCHARGE_GPIO_Port, DISCHARGE_Pin, GPIO_PIN_RESET);
         osDelay(10);
@@ -131,8 +132,23 @@ extern "C" void StartDefaultTask(void *argument)
 
 extern "C" void cantxCallback(void *argument)
 {
-  float ad;
-  printf("%d %d %d\n", MCP3208_Read(2), MCP3208_Read(1), MCP3208_Read(0));
+  printf("%f %f %f\n", MCP3208_Read(2)/122.0, MCP3208_Read(1)/122.0, MCP3208_Read(0)/122.0);
+  float current = (ADC_buff[0] - 410) / 62.0;
+  if (current > 10.0f)
+  {
+    HAL_GPIO_WritePin(ONOFF_GPIO_Port, ONOFF_Pin, GPIO_PIN_RESET);
+  }
+
+  PWRXPacket packet;
+  packet.current = current;
+  packet.battery1_voltage = MCP3208_Read(2)/122.0;
+  packet.battery2_voltage = MCP3208_Read(1)/122.0;
+  packet.output_voltage = MCP3208_Read(0)/122.0;
+  CANFD_Frame send;
+  memcpy(send.data, &packet, sizeof(packet));
+  send.id = own_id.id;
+  send.size = sizeof(packet);
+  canfd->tx(send);
 }
 
 extern "C" void dischargeCallback(void *argument)
