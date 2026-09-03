@@ -134,7 +134,7 @@ extern "C" void cantxCallback(void *argument)
 {
   printf("%f %f %f\n", MCP3208_Read(2)/122.0, MCP3208_Read(1)/122.0, MCP3208_Read(0)/122.0);
   float current = (ADC_buff[0] - 410) / 62.0;
-  if (current > 10.0f)
+  if (current > 20.0f)
   {
     HAL_GPIO_WritePin(ONOFF_GPIO_Port, ONOFF_Pin, GPIO_PIN_RESET);
   }
