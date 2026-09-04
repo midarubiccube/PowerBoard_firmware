@@ -21,7 +21,7 @@ void CANFD::start(){
 bool CANFD::tx(CANFD_Frame &tx_data){
 	FDCAN_TxHeaderTypeDef	TxHeader;
 	TxHeader.Identifier = tx_data.id;
-	TxHeader.IdType = FDCAN_EXTENDED_ID;
+	TxHeader.IdType = FDCAN_STANDARD_ID;
 	TxHeader.TxFrameType = tx_data.is_remote ? FDCAN_REMOTE_FRAME : FDCAN_DATA_FRAME;
 	TxHeader.DataLength = len2dlc(tx_data.size);
 	TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
