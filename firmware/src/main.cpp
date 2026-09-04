@@ -149,6 +149,7 @@ extern "C" void StartDefaultTask(void *argument)
         {
           led.set_rgb(100, 50, 0);
         } else {
+          led.set_rgb(255, 0, 0);
           HAL_GPIO_WritePin(ONOFF_GPIO_Port, ONOFF_Pin, GPIO_PIN_RESET);
           osDelay(30);
           HAL_GPIO_WritePin(DISCHARGE_GPIO_Port, DISCHARGE_Pin, GPIO_PIN_SET);
