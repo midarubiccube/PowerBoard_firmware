@@ -1,0 +1,3 @@
+[submodule "firmware/format"]
+	path = firmware/format
+	url = https://github.com/sp-robocon-prj/can_format_26a.git

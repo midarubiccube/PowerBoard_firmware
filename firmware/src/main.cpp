@@ -1,5 +1,3 @@
-#include "main.hpp"
-
 #include <cstring>
 
 #include "main.h"
@@ -14,6 +12,9 @@
 #include "FullColorLED.hpp"
 #include "WS2812B.hpp"
 #include "stm32g4xx_hal_gpio.h"
+
+#include "ID_format.h"
+#include "PWRManager_format.h"
 
 extern DMA_HandleTypeDef hdma_tim2_ch1;
 CANFD* canfd;
@@ -116,11 +117,16 @@ extern "C" void StartDefaultTask(void *argument)
   canfd = new CANFD(&hfdcan1);
 	canfd->start();
 
+  CANFD_Frame tx_frame;
+	tx_frame.id = own_id.id;
+	tx_frame.is_remote = true;
+	canfd->tx(tx_frame);  
+
   own_id.fields.board_num = 0;
   own_id.fields.data_type = DataType::POWERBOARD_COMANND;
   canfd->set_filter_mask(own_id.id, 0xff);
   
-  osTimerStart(cantx_taskHandle, 10);
+  osTimerStart(cantx_taskHandle, 100);
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)ADC_buff, sizeof(ADC_buff) / sizeof(ADC_buff[0]));
   hdma_adc1.Instance->CCR &= ~(DMA_IT_TC | DMA_IT_HT);
@@ -131,7 +137,7 @@ extern "C" void StartDefaultTask(void *argument)
     {
       CANFD_Frame receive;
       canfd->rx(receive);
-      PWRPacket packet;
+      PWRTX_CANPacket packet;
       memcpy(&packet, receive.data, receive.size);
       if (packet.pwrstatus)
       {
@@ -144,7 +150,7 @@ extern "C" void StartDefaultTask(void *argument)
           osDelay(10);
           HAL_GPIO_WritePin(ONOFF_GPIO_Port, ONOFF_Pin, GPIO_PIN_SET);
         }
-	    } else if (!packet.pwrstatus){
+	    } else {
         if (HAL_GPIO_ReadPin(EMENGECY_GPIO_Port, EMENGECY_Pin) == GPIO_PIN_SET)
         {
           led.set_rgb(100, 50, 0);
@@ -171,7 +177,7 @@ extern "C" void cantxCallback(void *argument)
     HAL_GPIO_WritePin(ONOFF_GPIO_Port, ONOFF_Pin, GPIO_PIN_RESET);
   }
 
-  PWRXPacket packet;
+  PWRX_CANPacket packet;
   packet.current = current;
   packet.battery1_voltage = MCP3208_Read(2)/122.0;
   packet.battery2_voltage = MCP3208_Read(1)/122.0;
