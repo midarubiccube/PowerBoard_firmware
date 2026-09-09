@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <string.h>
 
 #include "CANFD.hpp"
@@ -5,7 +6,7 @@
 #include "fdcan.h"
 
 void CANFD::start(){
-	if (HAL_FDCAN_ConfigGlobalFilter(fdcan_, FDCAN_REJECT, FDCAN_REJECT, FDCAN_ACCEPT_IN_RX_FIFO0, FDCAN_ACCEPT_IN_RX_FIFO0) != HAL_OK)
+	if (HAL_FDCAN_ConfigGlobalFilter(fdcan_, FDCAN_REJECT, FDCAN_REJECT, FDCAN_REJECT, FDCAN_REJECT) != HAL_OK)
 	{
 		Error_Handler();
 	}
@@ -83,9 +84,9 @@ bool CANFD::rx(CANFD_Frame &rx_frame){
 	}
 }
 
-void CANFD::set_filter_mask(uint32_t id,uint32_t mask){
+void CANFD::set_filter_mask(uint8_t index, uint32_t id,uint32_t mask){
 	filter_.IdType = FDCAN_STANDARD_ID;
-	filter_.FilterIndex = 0;
+	filter_.FilterIndex = index;
 	filter_.FilterType = FDCAN_FILTER_MASK;
 	filter_.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
 	filter_.FilterID1 = id;

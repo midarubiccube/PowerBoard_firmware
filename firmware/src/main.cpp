@@ -90,18 +90,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
       HAL_GPIO_WritePin(DISCHARGE_GPIO_Port, DISCHARGE_Pin, GPIO_PIN_RESET);
       if (onoff) 
       {
-        HAL_GPIO_WritePin(ONOFF_GPIO_Port, ONOFF_Pin, GPIO_PIN_SET);
         led.set_rgb(0, 255, 0);
-      } else
-      {
-        HAL_GPIO_WritePin(ONOFF_GPIO_Port, ONOFF_Pin, GPIO_PIN_RESET);
+      } else{
         led.set_rgb(255, 0, 0);
       }
       emengecy = false;
     }
     else
     {
-      HAL_GPIO_WritePin(ONOFF_GPIO_Port, ONOFF_Pin, GPIO_PIN_RESET);
       HAL_GPIO_WritePin(DISCHARGE_GPIO_Port, DISCHARGE_Pin, GPIO_PIN_SET);
       led.set_rgb(100, 50, 0);
       emengecy = true;
@@ -117,15 +113,22 @@ extern "C" void StartDefaultTask(void *argument)
   canfd = new CANFD(&hfdcan1);
 	canfd->start();
 
+  own_id.fields.board_num = 0;
+  own_id.fields.priority = 0;
+  own_id.fields.data_type = DataType::POWERBOARD_COMMAND;
+  canfd->set_filter_mask(0, own_id.id, 0xff);
+
+  ID common_id{};
+  common_id.fields.board_num = 0;
+  common_id.fields.priority = 0;
+  common_id.fields.data_type = DataType::COMMON_COMMAND;
+  canfd->set_filter_mask(1, common_id.id, 0xff);
+
   CANFD_Frame tx_frame;
 	tx_frame.id = own_id.id;
 	tx_frame.is_remote = true;
 	canfd->tx(tx_frame);  
 
-  own_id.fields.board_num = 0;
-  own_id.fields.data_type = DataType::POWERBOARD_COMANND;
-  canfd->set_filter_mask(own_id.id, 0xff);
-  
   osTimerStart(cantx_taskHandle, 100);
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)ADC_buff, sizeof(ADC_buff) / sizeof(ADC_buff[0]));
@@ -137,6 +140,20 @@ extern "C" void StartDefaultTask(void *argument)
     {
       CANFD_Frame receive;
       canfd->rx(receive);
+
+      if(receive.id != common_id.id && receive.id != common_id.id && receive.is_remote) 
+      {
+        CANFD_Frame tx_frame;
+	      tx_frame.id = own_id.id;
+	      tx_frame.is_remote = true;
+	      canfd->tx(tx_frame);  
+      }
+
+      if(receive.id != own_id.id && receive.id != own_id.id && receive.is_remote) 
+      {
+        led.set_rgb(255, 255, 255);
+      }
+
       PWRTX_CANPacket packet;
       memcpy(&packet, receive.data, receive.size);
       if (packet.pwrstatus)

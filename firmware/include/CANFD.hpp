@@ -37,7 +37,7 @@ public:
 	bool rx(CANFD_Frame &rx_frame);
 
 	//can filter setting///////////////////////////
-	void set_filter_mask(uint32_t id,uint32_t mask);
+	void set_filter_mask(uint8_t index, uint32_t id,uint32_t mask);
 	void set_filter_free(void);
 
 	static inline uint16_t len2dlc(uint16_t byte) {
